@@ -1,0 +1,1 @@
+# grunt-metaform-swagger-scaffold
