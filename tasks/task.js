@@ -60,16 +60,25 @@
     
     _.forEach(definition.properties, (propertyAttributes, swaggerPropertyName) => {
       const fieldRule = (definitionRules.fields||{})[swaggerPropertyName];
-      const flatten = fieldRule ? fieldRule.flatten : false; 
+      const flatten = fieldRule ? fieldRule.flatten : false;
+      const prefixFlatProperties = fieldRule ? fieldRule.prefixFlatProperties : false;
       const ref = propertyAttributes['$ref'];
       if (ref && flatten) {
         const referencedProperties = getReferencedProperties(swagger, ref);
-        _.merge(objectProperties, referencedProperties);
+        if (prefixFlatProperties) {
+          _.forEach(referencedProperties, (value, key) => {
+            objectProperties[`${swaggerPropertyName}.${key}`] = value;
+          });
+        } else {
+          _.merge(definition.properties, referencedProperties);
+        }
+
         delete objectProperties[swaggerPropertyName];
       }
     });
     
     _.forEach(objectProperties, (propertyAttributes, swaggerPropertyName) => {
+
       const fieldRule = (definitionRules.fields||{})[swaggerPropertyName];
 
       const skip = fieldRule && fieldRule.skip;
@@ -116,27 +125,30 @@
                 }
                 
                 const columnRule = fieldRule && fieldRule['columns'] ? fieldRule['columns'][referencedPropertyName] : null;
-                const column = {
-                  'title': `[[forms.${fileLocale}${operationCaptilized}.${propertyName}.${referencedPropertyName}]]`,
-                  'name': referencedPropertyName,
-                  'type': type,
-                  'calculate-sum': columnRule && columnRule['calculate-sum'],
-                  'order': columnRule && columnRule['order'] !== undefined ? columnRule['order'] : 100,
-                  'min': columnRule ? columnRule['min'] : undefined,
-                  'max': columnRule ? columnRule['max'] : undefined,
-                  'step': columnRule ? columnRule['step'] : undefined
-                };
-                
-                if (type === 'enum') {
-                  column.values = _.map(referencedPropertyAttributes.enum || [], (enumValue) => {
-                    return {
-                      text: `[[forms.${fileLocale}${operationCaptilized}.${propertyName}.${referencedPropertyName}.${enumValue}]]`,
-                      value: enumValue
-                    };
-                  });
+                const skipColumn = columnRule && columnRule.skip;
+                if (!skipColumn) {
+                  const column = Object.assign({
+                    'title': `[[forms.${fileLocale}${operationCaptilized}.${propertyName}.${referencedPropertyName}]]`,
+                    'name': referencedPropertyName,
+                    'type': columnRule && columnRule['type'] ? columnRule['type'] : type,
+                    'calculate-sum': columnRule && columnRule['calculate-sum'],
+                    'order': columnRule && columnRule['order'] !== undefined ? columnRule['order'] : 100,
+                    'min': columnRule ? columnRule['min'] : undefined,
+                    'max': columnRule ? columnRule['max'] : undefined,
+                    'step': columnRule ? columnRule['step'] : undefined
+                  },  columnRule ? columnRule.extra || {} : {});
+
+                  if (type === 'enum') {
+                    column.values = _.map(referencedPropertyAttributes.enum || [], (enumValue) => {
+                      return {
+                        text: `[[forms.${fileLocale}${operationCaptilized}.${propertyName}.${referencedPropertyName}.${enumValue}]]`,
+                        value: enumValue
+                      };
+                    });
+                  }
+
+                  field.columns.push(column);
                 }
-                
-                field.columns.push(column);
               }
             });
             

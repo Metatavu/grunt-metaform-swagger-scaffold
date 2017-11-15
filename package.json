@@ -1,6 +1,6 @@
 {
   "name": "grunt-metaform-swagger-scaffold",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Grunt tasks for scaffolding metaform forms from Swagger files",
   "main": "tasks/task.js",
   "scripts": {
