@@ -29,7 +29,11 @@
     if (swaggerType === 'string' && swaggerFormat === 'date-time') {
       return 'date-time';
     }
-    
+
+    if (swaggerType === 'boolean') {
+      return 'boolean';
+    }
+
     if (swaggerType === 'array' && propertyAttributes.items && propertyAttributes.items['$ref']) {
       return 'table';
     }
